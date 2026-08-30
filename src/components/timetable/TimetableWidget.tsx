@@ -4,7 +4,7 @@ import { TimeTableSlot, Subject } from '../../types';
 import { AttendanceStatusType, ATTENDANCE_STATUS_CONFIG } from '../../config/settings';
 import { AttendanceActionDrawer } from '../attendance/AttendanceActionDrawer';
 import { useApp } from '../../store/AppContext';
-import { Clock, MapPin, ChevronUp, ChevronDown, Trash2, Plus, Minus, MoveVertical } from 'lucide-react';
+import { Clock, ChevronUp, ChevronDown, Trash2, Plus, Minus, MoveVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TimetableWidgetProps {
@@ -56,9 +56,6 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   };
 
   const handleClearStatus = () => {
-    // If clearing, we can mark as undefined or pass a custom handler
-    // In our context, markAttendance updates state. We can mark status or reset.
-    // Setting to exempted or deleting record
     handleSelectStatus('exempted');
   };
 
@@ -100,7 +97,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
         }
       `}
     >
-      {/* Left Subject Color Accent Stripe */}
+      {/* Left Subject Color Stripe */}
       <div
         className="absolute top-0 bottom-0 left-0 w-2"
         style={{ backgroundColor: slot.color.hex }}
@@ -108,7 +105,6 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
 
       {/* Main Widget Header & Details */}
       <div className="pl-2 space-y-2">
-        {/* Top Info Strip: Time Range & Duration Aspect Badge */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-300">
             <Clock size={12} className="text-zinc-500" />
@@ -116,7 +112,6 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Active Status Badge if marked */}
             {statusConfig && (
               <span
                 className="font-mono text-[9px] font-black uppercase px-2 py-0.5 border border-black shadow-[1px_1px_0_#000]"
@@ -129,49 +124,33 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
               </span>
             )}
 
-            {/* Aspect Ratio Badge */}
             <span
               className="font-mono text-[9px] font-black uppercase px-2 py-0.5 border border-black shadow-[1px_1px_0_#000]"
               style={{
                 backgroundColor: slot.color.hex,
-                color: slot.color.text,
+                color: '#FFFFFF',
               }}
-              title={`Widget Aspect Ratio: ${slot.aspectRatioClass} (${duration} hr duration)`}
             >
               {duration} {duration === 1 ? 'HR' : 'HRS'}
             </span>
           </div>
         </div>
 
-        {/* Subject Name & Code */}
+        {/* Subject Name */}
         <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] font-bold text-zinc-400">
-              [{slot.subject.code || 'SUB'}]
+          <h3 className="font-mono text-sm font-black text-white tracking-tight leading-snug">
+            {slot.subject.name}
+          </h3>
+
+          {!isMakerMode && (
+            <span className="text-[10px] font-mono text-zinc-400 block pt-1 hover:text-white transition-colors">
+              {isExpanded ? 'Hide ▲' : statusConfig ? 'Change Status ▼' : 'Tap to Mark ▼'}
             </span>
-            <h3 className="font-mono text-sm font-black text-white tracking-tight leading-snug">
-              {slot.subject.name}
-            </h3>
-          </div>
-
-          <div className="flex items-center justify-between">
-            {slot.room ? (
-              <div className="flex items-center gap-1 font-mono text-[11px] text-zinc-400">
-                <MapPin size={11} className="text-zinc-500" />
-                <span>{slot.room}</span>
-              </div>
-            ) : <div />}
-
-            {!isMakerMode && (
-              <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-0.5 hover:text-white transition-colors">
-                {isExpanded ? 'Hide Options ▲' : statusConfig ? 'Change Status ▼' : 'Tap to Mark Attendance ▼'}
-              </span>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Attendance Quick Drawer (Single Click Expansion) */}
+      {/* Attendance Quick Drawer */}
       <AnimatePresence>
         {!isMakerMode && isExpanded && (
           <div className="pl-2">
@@ -185,11 +164,11 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Maker Mode Dynamic Resizing & Slot Control Dock */}
+      {/* Maker Mode Dynamic Resizing & Controls */}
       {isMakerMode && (
         <div className="pl-2 pt-3 mt-2 border-t-2 border-zinc-800/80 space-y-2" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between gap-2 bg-zinc-900/90 p-2 border border-zinc-700">
-            {/* Quick Duration Vertical Resizer Pills */}
+            {/* Quick Duration Steppers */}
             <div className="flex items-center gap-1.5">
               <span className="font-mono text-[10px] font-bold uppercase text-zinc-400 flex items-center gap-1">
                 <MoveVertical size={11} className="text-emerald-400" />
@@ -215,13 +194,12 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
                 onClick={handleIncrement}
                 disabled={duration >= 6}
                 className="w-6 h-6 flex items-center justify-center bg-zinc-800 border border-zinc-600 text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-zinc-700 active:scale-95 transition-all font-mono"
-                title="Increase duration by 1 hour (stretch widget vertically)"
+                title="Increase duration by 1 hour"
               >
                 <Plus size={12} strokeWidth={3} />
               </button>
             </div>
 
-            {/* Change Subject Trigger */}
             <button
               type="button"
               onClick={() => setIsEditingSubject(!isEditingSubject)}
@@ -231,7 +209,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
             </button>
           </div>
 
-          {/* Quick Subject Switcher Drawer */}
+          {/* Quick Subject Switcher */}
           <AnimatePresence>
             {isEditingSubject && (
               <motion.div
@@ -240,9 +218,6 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-1 bg-zinc-950 p-2 border border-zinc-700"
               >
-                <span className="font-mono text-[10px] uppercase text-zinc-400 font-bold block mb-1">
-                  Assign Different Subject:
-                </span>
                 <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto">
                   {subjects.map((sub) => (
                     <button
@@ -259,7 +234,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
                       }`}
                     >
                       <span
-                        className="w-2 h-2 rounded-none border border-black flex-shrink-0"
+                        className="w-2 h-2 border border-black flex-shrink-0"
                         style={{ backgroundColor: sub.colorId }}
                       />
                       <span className="truncate">{sub.name}</span>
@@ -270,10 +245,9 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
             )}
           </AnimatePresence>
 
-          {/* Slot Positioning & Delete Actions */}
+          {/* Slot Reordering & Remove */}
           <div className="flex items-center justify-between pt-1 font-mono text-xs">
             <div className="flex items-center gap-1">
-              <span className="text-[10px] text-zinc-500 font-bold uppercase">Order:</span>
               {onMoveSlot && (
                 <>
                   <button
@@ -316,7 +290,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
           <div className="space-y-1">
             <h4 className="font-mono text-xs font-bold text-rose-400 uppercase">Remove Slot?</h4>
             <p className="font-mono text-[11px] text-zinc-400 leading-tight">
-              Remove &ldquo;{slot.subject.name}&rdquo; ({slot.timeRangeFormatted}) from this day&apos;s schedule?
+              Remove &ldquo;{slot.subject.name}&rdquo; from this day&apos;s schedule?
             </p>
           </div>
           <div className="flex items-center justify-end gap-2 pt-2">
@@ -335,7 +309,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
               }}
               className="px-2 py-1 bg-rose-600 text-white font-mono text-[10px] uppercase font-bold hover:bg-rose-500"
             >
-              Yes, Remove
+              Remove
             </button>
           </div>
         </div>

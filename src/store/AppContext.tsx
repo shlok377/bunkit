@@ -12,7 +12,7 @@ interface AppContextType {
   settings: AppSettings;
   
   // Subject Actions
-  addSubject: (data: { name: string; code?: string; colorId?: string; moodTag?: Subject['moodTag']; roomDefault?: string; targetPercentage?: number }) => Subject;
+  addSubject: (data: { name: string; colorId?: string }) => Subject;
   updateSubject: (id: string, updates: Partial<Subject>) => void;
   deleteSubject: (id: string, cascade?: boolean) => void;
   getSubjectById: (id: string) => Subject | undefined;
@@ -23,9 +23,8 @@ interface AppContextType {
   deleteSlot: (id: string) => void;
 
   // Attendance Actions
-  markAttendance: (date: string, slotId: string, subjectId: string, status: AttendanceStatusType, durationHours: number, note?: string) => void;
+  markAttendance: (date: string, slotId: string, subjectId: string, status: AttendanceStatusType, durationHours: number) => void;
   getRecordForSlot: (date: string, slotId: string) => AttendanceRecord | undefined;
-  getRecordsForDate: (date: string) => AttendanceRecord[];
 
   // Settings & State Actions
   updateSettings: (updates: Partial<AppSettings>) => void;
@@ -38,13 +37,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState>(loadAppState);
 
-  // Synchronize state changes to localStorage
   useEffect(() => {
     saveAppState(state);
   }, [state]);
 
-  // Add Subject with Auto-Color Assignment fallback
-  const addSubject = useCallback((data: { name: string; code?: string; colorId?: string; moodTag?: Subject['moodTag']; roomDefault?: string; targetPercentage?: number }): Subject => {
+  // Add Subject with Auto-Color fallback
+  const addSubject = useCallback((data: { name: string; colorId?: string }): Subject => {
     let finalColorId = data.colorId;
     if (!finalColorId) {
       finalColorId = getAutoAssignedColor(state.subjects).id;
@@ -53,11 +51,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newSubject: Subject = {
       id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       name: data.name.trim(),
-      code: data.code?.trim().toUpperCase(),
       colorId: finalColorId,
-      moodTag: data.moodTag || 'ok_ok',
-      roomDefault: data.roomDefault?.trim(),
-      targetPercentage: data.targetPercentage,
       createdAt: Date.now(),
     };
 
@@ -69,7 +63,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newSubject;
   }, [state.subjects]);
 
-  // Update Subject
   const updateSubject = useCallback((id: string, updates: Partial<Subject>) => {
     setState((prev) => ({
       ...prev,
@@ -77,7 +70,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Delete Subject (with optional cascade removal of slots & records)
   const deleteSubject = useCallback((id: string, cascade = true) => {
     setState((prev) => {
       const newSubjects = prev.subjects.filter((s) => s.id !== id);
@@ -86,7 +78,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (cascade) {
         newTimetable = prev.timetable.filter((slot) => slot.subjectId !== id);
-        // remove records for this subject
         Object.keys(newRecords).forEach((key) => {
           if (newRecords[key].subjectId === id) {
             delete newRecords[key];
@@ -103,12 +94,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
-  // Get Subject By Id
   const getSubjectById = useCallback((id: string) => {
     return state.subjects.find((s) => s.id === id);
   }, [state.subjects]);
 
-  // Add Slot
   const addSlot = useCallback((slot: Omit<TimeTableSlot, 'id'>): TimeTableSlot => {
     const newSlot: TimeTableSlot = {
       ...slot,
@@ -123,7 +112,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newSlot;
   }, []);
 
-  // Update Slot
   const updateSlot = useCallback((id: string, updates: Partial<TimeTableSlot>) => {
     setState((prev) => ({
       ...prev,
@@ -131,7 +119,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Delete Slot
   const deleteSlot = useCallback((id: string) => {
     setState((prev) => ({
       ...prev,
@@ -139,14 +126,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Mark Attendance
   const markAttendance = useCallback((
     date: string,
     slotId: string,
     subjectId: string,
     status: AttendanceStatusType,
-    durationHours: number,
-    note?: string
+    durationHours: number
   ) => {
     const key = `${date}_${slotId}`;
     const record: AttendanceRecord = {
@@ -157,7 +142,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status,
       durationHours,
       timestamp: Date.now(),
-      note,
     };
 
     setState((prev) => ({
@@ -169,17 +153,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Get Record for Slot
   const getRecordForSlot = useCallback((date: string, slotId: string) => {
     return state.records[`${date}_${slotId}`];
   }, [state.records]);
 
-  // Get Records for Date
-  const getRecordsForDate = useCallback((date: string) => {
-    return Object.values(state.records).filter((r) => r.date === date);
-  }, [state.records]);
-
-  // Update Settings
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     setState((prev) => ({
       ...prev,
@@ -190,14 +167,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Reset All Data
   const resetAllData = useCallback(() => {
     const fresh = getInitialState();
     setState(fresh);
     saveAppState(fresh);
   }, []);
 
-  // Import State
   const importState = useCallback((newState: AppState) => {
     setState(newState);
     saveAppState(newState);
@@ -220,7 +195,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteSlot,
         markAttendance,
         getRecordForSlot,
-        getRecordsForDate,
         updateSettings,
         resetAllData,
         importState,

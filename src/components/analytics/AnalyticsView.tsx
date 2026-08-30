@@ -2,13 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../store/AppContext';
 import { calculateAttendanceStats, calculateSubjectBreakdown } from '../../utils/attendanceEngine';
 import { CalculationMode } from '../../config/settings';
-import {
-  AlertTriangle,
-  BookOpen,
-  ShieldCheck,
-  Zap,
-  Flame,
-} from 'lucide-react';
+import { AlertTriangle, BookOpen, ShieldCheck, Zap } from 'lucide-react';
 
 export const AnalyticsView: React.FC = () => {
   const { subjects, records, settings } = useApp();
@@ -30,7 +24,6 @@ export const AnalyticsView: React.FC = () => {
   const target = settings.targetAttendancePercent || 75;
   const isAboveTarget = displayPercentage >= target;
 
-  // Compute radial progress stroke
   const radius = 64;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (Math.min(100, displayPercentage) / 100) * circumference;
@@ -44,9 +37,9 @@ export const AnalyticsView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1. Hero Radial Dial & Attendance Health Card */}
+      {/* 1. Hero Radial Dial */}
       <div className="brutal-card p-5 bg-zinc-950/95 border-2 border-zinc-800 space-y-4 relative overflow-hidden">
-        {/* Scenario Toggle Switcher */}
+        {/* Scenario Toggle */}
         <div className="flex items-center justify-between border-b border-zinc-850 pb-3">
           <span className="font-mono text-xs uppercase font-bold text-zinc-400">
             Calculation Scenario:
@@ -77,12 +70,10 @@ export const AnalyticsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Hero Radial Gauge & Core Metric */}
+        {/* Radial Dial & Target Display */}
         <div className="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
-          {/* SVG Circular Dial */}
           <div className="relative w-36 h-36 flex items-center justify-center">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
-              {/* Background Track */}
               <circle
                 cx="80"
                 cy="80"
@@ -91,17 +82,6 @@ export const AnalyticsView: React.FC = () => {
                 strokeWidth="12"
                 fill="none"
               />
-              {/* Target Threshold Indicator Tick */}
-              <circle
-                cx="80"
-                cy="80"
-                r={radius}
-                stroke="#3F3F46"
-                strokeWidth="12"
-                strokeDasharray={`2 ${circumference / 20}`}
-                fill="none"
-              />
-              {/* Active Animated Progress */}
               <circle
                 cx="80"
                 cy="80"
@@ -116,7 +96,6 @@ export const AnalyticsView: React.FC = () => {
               />
             </svg>
 
-            {/* Center Percentage Display */}
             <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
               <span className="text-3xl font-black text-white tracking-tighter">
                 {displayPercentage}%
@@ -127,41 +106,32 @@ export const AnalyticsView: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Health Summary & Streak */}
-          <div className="space-y-2 text-center sm:text-left font-mono">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 border text-xs font-black uppercase mb-1"
-                style={{
-                  borderColor: healthColor,
-                  backgroundColor: `${healthColor}20`,
-                  color: healthColor,
-                }}
-              >
-                {isAboveTarget ? <ShieldCheck size={14} /> : <AlertTriangle size={14} />}
-                <span>{isAboveTarget ? 'Safe Zone' : 'Danger Zone'}</span>
-              </div>
-              <p className="text-xs text-zinc-400">
-                College Target: <strong className="text-white">{target}%</strong>
-              </p>
+          <div className="space-y-1.5 text-center sm:text-left font-mono">
+            <div
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 border text-xs font-black uppercase"
+              style={{
+                borderColor: healthColor,
+                backgroundColor: `${healthColor}20`,
+                color: healthColor,
+              }}
+            >
+              {isAboveTarget ? <ShieldCheck size={14} /> : <AlertTriangle size={14} />}
+              <span>{isAboveTarget ? 'Safe Zone' : 'Danger Zone'}</span>
             </div>
-
-            <div className="flex items-center justify-center sm:justify-start gap-3 pt-1 text-xs">
-              <div className="flex items-center gap-1 text-amber-400 font-bold">
-                <Flame size={14} className="fill-amber-400" />
-                <span>{stats.streakDays} Day Streak</span>
-              </div>
-            </div>
+            <p className="text-xs text-zinc-400">
+              Target: <strong className="text-white">{target}%</strong>
+            </p>
           </div>
         </div>
 
-        {/* 2. Gamified Safe-to-Bunk & Catch-Up Intelligence Card */}
+        {/* 2. Safe-to-Bunk & Catch-Up Card */}
         <div className="pt-2 border-t border-zinc-850">
           {isAboveTarget ? (
             <div className="p-3 bg-emerald-950/60 border-2 border-emerald-500/80 font-mono space-y-1">
               <div className="flex items-center justify-between text-emerald-400 font-black text-xs uppercase">
                 <span className="flex items-center gap-1.5">
                   <Zap size={14} className="fill-emerald-400" />
-                  Bunk Budget Available!
+                  Bunk Budget Available
                 </span>
                 <span className="text-sm font-black">
                   +{scenarioMode === 'hourly' ? stats.safeBunkHours : stats.safeBunkClasses}{' '}
@@ -169,11 +139,11 @@ export const AnalyticsView: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-zinc-300">
-                You can safely skip up to{' '}
+                You can safely bunk up to{' '}
                 <strong className="text-emerald-300">
                   {scenarioMode === 'hourly' ? `${stats.safeBunkHours} hours` : `${stats.safeBunkClasses} classes`}
                 </strong>{' '}
-                and still remain strictly above your {target}% target.
+                while staying above {target}%.
               </p>
             </div>
           ) : (
@@ -181,7 +151,7 @@ export const AnalyticsView: React.FC = () => {
               <div className="flex items-center justify-between text-rose-400 font-black text-xs uppercase">
                 <span className="flex items-center gap-1.5">
                   <AlertTriangle size={14} />
-                  Attendance Recovery Needed!
+                  Attendance Recovery Needed
                 </span>
                 <span className="text-sm font-black">
                   +{scenarioMode === 'hourly' ? stats.requiredCatchUpHours : stats.requiredCatchUpClasses}{' '}
@@ -193,15 +163,15 @@ export const AnalyticsView: React.FC = () => {
                 <strong className="text-rose-300">
                   {scenarioMode === 'hourly' ? `${stats.requiredCatchUpHours} hours` : `${stats.requiredCatchUpClasses} classes`}
                 </strong>{' '}
-                consecutively without bunking to bring your record back above {target}%.
+                consecutively to reach {target}%.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* 3. Detailed Metrics Breakdown Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+      {/* 3. Summary Tiles */}
+      <div className="grid grid-cols-3 gap-2 font-mono text-xs">
         <div className="brutal-card p-3 bg-zinc-950 border-2 border-zinc-800 space-y-1">
           <span className="text-[10px] uppercase font-bold text-zinc-400">Attended</span>
           <div className="text-lg font-black text-emerald-400">
@@ -210,14 +180,7 @@ export const AnalyticsView: React.FC = () => {
         </div>
 
         <div className="brutal-card p-3 bg-zinc-950 border-2 border-zinc-800 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-zinc-400">Proxies</span>
-          <div className="text-lg font-black text-sky-400">
-            {stats.proxyHours}h <span className="text-xs text-zinc-500 font-normal">({stats.proxyClasses} cls)</span>
-          </div>
-        </div>
-
-        <div className="brutal-card p-3 bg-zinc-950 border-2 border-zinc-800 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-zinc-400">Bunked / Absent</span>
+          <span className="text-[10px] uppercase font-bold text-zinc-400">Bunked</span>
           <div className="text-lg font-black text-rose-400">
             {stats.absentHours}h <span className="text-xs text-zinc-500 font-normal">({stats.absentClasses} cls)</span>
           </div>
@@ -236,7 +199,7 @@ export const AnalyticsView: React.FC = () => {
         <div className="flex items-center justify-between font-mono text-xs">
           <span className="font-bold uppercase text-zinc-300 flex items-center gap-1.5">
             <BookOpen size={14} className="text-emerald-400" />
-            Subject-Wise Compliance ({subjects.length})
+            Subject-Wise Attendance ({subjects.length})
           </span>
           <span className="text-[11px] text-zinc-500">Scenario C</span>
         </div>
@@ -244,19 +207,17 @@ export const AnalyticsView: React.FC = () => {
         <div className="grid grid-cols-1 gap-2.5">
           {subjectStats.map((subStat) => {
             const sub = subStat.subject;
-                        const subPct =
+            const subPct =
               scenarioMode === 'lecture_count'
                 ? subStat.classPercentage
                 : subStat.hourlyPercentage;
-            const subTarget = sub.targetPercentage || target;
-            const isSubSafe = subPct >= subTarget;
+            const isSubSafe = subPct >= target;
 
             return (
               <div
                 key={sub.id}
-                className="brutal-card p-3 bg-zinc-950 border-2 border-zinc-800 hover:border-zinc-700 transition-all space-y-2 relative overflow-hidden"
+                className="brutal-card p-3 bg-zinc-950 border-2 border-zinc-800 space-y-2 relative overflow-hidden"
               >
-                {/* Subject Color Line */}
                 <div
                   className="absolute top-0 bottom-0 left-0 w-2"
                   style={{ backgroundColor: sub.colorId }}
@@ -264,22 +225,14 @@ export const AnalyticsView: React.FC = () => {
 
                 <div className="pl-2 space-y-1.5 font-mono">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-zinc-400">
-                        [{sub.code || 'SUB'}]
-                      </span>
-                      <h4 className="font-bold text-sm text-white">{sub.name}</h4>
-                    </div>
-
-                    <div className="text-right">
-                      <span
-                        className={`text-sm font-black ${
-                          isSubSafe ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
-                      >
-                        {subPct}%
-                      </span>
-                    </div>
+                    <h4 className="font-bold text-sm text-white">{sub.name}</h4>
+                    <span
+                      className={`text-sm font-black ${
+                        isSubSafe ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {subPct}%
+                    </span>
                   </div>
 
                   {/* Progress Bar */}
@@ -292,10 +245,9 @@ export const AnalyticsView: React.FC = () => {
                     />
                   </div>
 
-                  {/* Bottom Stats & Bunk Capacity per Subject */}
                   <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-0.5">
                     <span>
-                      {subStat.attendedHours}h of {subStat.effectiveTotalHours}h attended
+                      {subStat.attendedHours}h of {subStat.effectiveTotalHours}h
                     </span>
 
                     <span>
