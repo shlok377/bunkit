@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { MaterializedSlot } from '../../utils/timetableEngine';
 import { TimeTableSlot, Subject } from '../../types';
+import { AttendanceStatusType, ATTENDANCE_STATUS_CONFIG } from '../../config/settings';
+import { AttendanceActionDrawer } from '../attendance/AttendanceActionDrawer';
+import { useApp } from '../../store/AppContext';
 import { Clock, MapPin, ChevronUp, ChevronDown, Trash2, Plus, Minus, MoveVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,10 +30,37 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   isFirst,
   isLast,
 }) => {
+  const { markAttendance } = useApp();
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isEditingSubject, setIsEditingSubject] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const duration = slot.durationHours;
+  const currentRecord = slot.record;
+  const statusConfig = currentRecord ? ATTENDANCE_STATUS_CONFIG[currentRecord.status] : null;
+
+  const handleCardClick = () => {
+    if (!isMakerMode) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  const handleSelectStatus = (status: AttendanceStatusType) => {
+    markAttendance(
+      slot.dateStr,
+      slot.slotId,
+      slot.subjectId,
+      status,
+      slot.durationHours
+    );
+  };
+
+  const handleClearStatus = () => {
+    // If clearing, we can mark as undefined or pass a custom handler
+    // In our context, markAttendance updates state. We can mark status or reset.
+    // Setting to exempted or deleting record
+    handleSelectStatus('exempted');
+  };
 
   const handleIncrement = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,19 +83,24 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2 }}
+      onClick={handleCardClick}
       style={{
         minHeight: `${slot.minHeightPx}px`,
+        borderColor: statusConfig ? statusConfig.borderColor : undefined,
+        backgroundColor: statusConfig ? statusConfig.bgDarkColor : '#121215',
       }}
       className={`
-        brutal-card relative p-3.5 flex flex-col justify-between transition-all overflow-hidden
+        brutal-card relative p-3.5 flex flex-col justify-between transition-all overflow-hidden cursor-pointer
         ${
           isMakerMode
-            ? 'border-2 border-dashed border-zinc-600 bg-zinc-950/95 shadow-[4px_4px_0_#18181B]'
-            : 'border-2 border-zinc-800 bg-[#121215] shadow-[4px_4px_0_#000000]'
+            ? 'border-2 border-dashed border-zinc-600 bg-zinc-950/95 shadow-[4px_4px_0_#18181B] cursor-default'
+            : statusConfig
+            ? 'border-2 shadow-[4px_4px_0_#000000]'
+            : 'border-2 border-zinc-800 hover:border-zinc-700 shadow-[4px_4px_0_#000000]'
         }
       `}
     >
-      {/* Left Subject Color Stripe */}
+      {/* Left Subject Color Accent Stripe */}
       <div
         className="absolute top-0 bottom-0 left-0 w-2"
         style={{ backgroundColor: slot.color.hex }}
@@ -81,6 +116,19 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Active Status Badge if marked */}
+            {statusConfig && (
+              <span
+                className="font-mono text-[9px] font-black uppercase px-2 py-0.5 border border-black shadow-[1px_1px_0_#000]"
+                style={{
+                  backgroundColor: statusConfig.borderColor,
+                  color: '#000000',
+                }}
+              >
+                {statusConfig.label}
+              </span>
+            )}
+
             {/* Aspect Ratio Badge */}
             <span
               className="font-mono text-[9px] font-black uppercase px-2 py-0.5 border border-black shadow-[1px_1px_0_#000]"
@@ -90,7 +138,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
               }}
               title={`Widget Aspect Ratio: ${slot.aspectRatioClass} (${duration} hr duration)`}
             >
-              {duration} {duration === 1 ? 'HR' : 'HRS'} • {slot.aspectRatioClass}
+              {duration} {duration === 1 ? 'HR' : 'HRS'}
             </span>
           </div>
         </div>
@@ -106,18 +154,40 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
             </h3>
           </div>
 
-          {slot.room && (
-            <div className="flex items-center gap-1 font-mono text-[11px] text-zinc-400">
-              <MapPin size={11} className="text-zinc-500" />
-              <span>{slot.room}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            {slot.room ? (
+              <div className="flex items-center gap-1 font-mono text-[11px] text-zinc-400">
+                <MapPin size={11} className="text-zinc-500" />
+                <span>{slot.room}</span>
+              </div>
+            ) : <div />}
+
+            {!isMakerMode && (
+              <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-0.5 hover:text-white transition-colors">
+                {isExpanded ? 'Hide Options ▲' : statusConfig ? 'Change Status ▼' : 'Tap to Mark Attendance ▼'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Attendance Quick Drawer (Single Click Expansion) */}
+      <AnimatePresence>
+        {!isMakerMode && isExpanded && (
+          <div className="pl-2">
+            <AttendanceActionDrawer
+              currentStatus={currentRecord?.status}
+              onSelectStatus={handleSelectStatus}
+              onClearStatus={handleClearStatus}
+              durationHours={duration}
+            />
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Maker Mode Dynamic Resizing & Slot Control Dock */}
       {isMakerMode && (
-        <div className="pl-2 pt-3 mt-2 border-t-2 border-zinc-800/80 space-y-2">
+        <div className="pl-2 pt-3 mt-2 border-t-2 border-zinc-800/80 space-y-2" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between gap-2 bg-zinc-900/90 p-2 border border-zinc-700">
             {/* Quick Duration Vertical Resizer Pills */}
             <div className="flex items-center gap-1.5">
@@ -242,7 +312,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
 
       {/* Delete Confirmation Modal */}
       {showConfirmDelete && (
-        <div className="absolute inset-0 bg-zinc-950/95 border-2 border-rose-600 p-3 flex flex-col justify-between z-30">
+        <div className="absolute inset-0 bg-zinc-950/95 border-2 border-rose-600 p-3 flex flex-col justify-between z-30" onClick={(e) => e.stopPropagation()}>
           <div className="space-y-1">
             <h4 className="font-mono text-xs font-bold text-rose-400 uppercase">Remove Slot?</h4>
             <p className="font-mono text-[11px] text-zinc-400 leading-tight">
