@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppProvider, useApp } from './store/AppContext';
 import { SubjectManagerView } from './components/subjects/SubjectManagerView';
+import { TimetableMakerView } from './components/timetable/TimetableMakerView';
 import { Calendar, BarChart3, Clock, Settings, BookOpen } from 'lucide-react';
 
 function MainApp() {
@@ -49,19 +50,7 @@ function MainApp() {
           </div>
         )}
 
-        {activeTab === 'timetable' && (
-          <div className="space-y-4">
-            <div className="brutal-card p-4 bg-zinc-950/90 border-2 border-zinc-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-zinc-400 uppercase">Apple-Style Timetable Maker</span>
-                <span className="brutal-badge bg-sky-950 text-sky-400 border-sky-500">TASK 3 &amp; 4 READY</span>
-              </div>
-              <p className="text-xs text-zinc-300">
-                Grid snapping widget duration editor (1h to 6h) and month progress bar are ready to build in Tasks 3 &amp; 4!
-              </p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'timetable' && <TimetableMakerView />}
 
         {activeTab === 'analytics' && (
           <div className="space-y-4">
