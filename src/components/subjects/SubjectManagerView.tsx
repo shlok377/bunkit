@@ -3,7 +3,7 @@ import { Subject } from '../../types';
 import { useApp } from '../../store/AppContext';
 import { SubjectCard } from './SubjectCard';
 import { SubjectModal } from './SubjectModal';
-import { Plus, Layers } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export const SubjectManagerView: React.FC = () => {
   const { subjects, timetable, addSubject, updateSubject, deleteSubject } = useApp();
@@ -30,28 +30,23 @@ export const SubjectManagerView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="brutal-card p-4 bg-zinc-950/90 border-2 border-zinc-800 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers size={18} className="text-emerald-400" />
-            <h2 className="font-mono text-sm font-black uppercase text-white tracking-wider">
-              Subjects ({subjects.length})
-            </h2>
-          </div>
-          <button
-            onClick={handleOpenAdd}
-            className="brutal-btn-primary flex items-center gap-1.5 py-1.5 px-3 text-xs"
-          >
-            <Plus size={14} className="stroke-[3]" />
-            <span>Add Subject</span>
-          </button>
-        </div>
+      {/* Minimal Header */}
+      <div className="flex items-center justify-between font-mono pt-1">
+        <h2 className="text-sm font-black uppercase text-white tracking-wider">
+          Subjects ({subjects.length})
+        </h2>
+        <button
+          onClick={handleOpenAdd}
+          className="px-2.5 py-1 font-bold uppercase text-[10px] bg-white text-black border border-white hover:bg-zinc-200 flex items-center gap-1"
+        >
+          <Plus size={12} strokeWidth={3} />
+          <span>Add</span>
+        </button>
       </div>
 
       {/* Subjects List */}
       {subjects.length > 0 ? (
-        <div className="grid grid-cols-1 gap-2.5">
+        <div className="space-y-2">
           {subjects.map((sub) => (
             <SubjectCard
               key={sub.id}
@@ -63,21 +58,13 @@ export const SubjectManagerView: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="brutal-card p-8 text-center bg-zinc-950/60 border-2 border-dashed border-zinc-800 space-y-3">
-          <div className="space-y-1">
-            <h4 className="font-mono text-sm font-bold text-white uppercase">
-              No Subjects Added
-            </h4>
-            <p className="text-xs text-zinc-400 max-w-xs mx-auto">
-              Add your semester subjects to assign colors and build your timetable.
-            </p>
-          </div>
+        <div className="py-12 text-center text-zinc-500 font-mono text-xs space-y-2">
+          <p>No subjects added yet.</p>
           <button
             onClick={handleOpenAdd}
-            className="brutal-btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+            className="text-white underline text-[11px] font-bold"
           >
-            <Plus size={14} className="stroke-[3]" />
-            <span>Add First Subject</span>
+            + Add your first subject
           </button>
         </div>
       )}
